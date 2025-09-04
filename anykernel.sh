@@ -80,7 +80,6 @@ manual_install() {
         ui_print "┌─────────────────────────────────┐";
         ui_print "│     Modified GPU Selected       │";
         ui_print "└─────────────────────────────────┘";
-        ui_print " ";
         ui_print "> GPU Profile: OC+UV (Vol +) || UV Only (Vol -) ";
         while true; do
           ev=$(getevent -lt 2>/dev/null | grep -m1 "KEY_VOLUME.*DOWN")
@@ -118,7 +117,6 @@ manual_install() {
         ui_print "┌─────────────────────────────────┐";
         ui_print "│     Normal CPU Mode Selected    │";
         ui_print "└─────────────────────────────────┘";
-        ui_print " ";
         ui_print "> CPU Frequency: 3.2GHz (Vol +) || 2.8GHz (Vol -) ";
         while true; do
           ev=$(getevent -lt 2>/dev/null | grep -m1 "KEY_VOLUME.*DOWN")
