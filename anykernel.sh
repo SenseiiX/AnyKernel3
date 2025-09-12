@@ -90,7 +90,7 @@ manual_install() {
               break;
               ;;
             *KEY_VOLUMEDOWN*)
-              ui_print "◉ UV GPU profile Selected...";
+              ui_print "◉ UV GPU profile Selected (670-150MHz)...";
               GPU_PROFILE="uv"
               break;
               ;;
@@ -208,14 +208,20 @@ auto_install() {
   case "$ZIPFILE" in
     *ocuv*|*OCUV*)
       GPU_PROFILE="ocuv"
-      ui_print "◉ OC+UV GPU profile detected (683-150MHz)...";
+      ui_print "┌─────────────────────────────────┐";
+      ui_print "│       OC+UV GPU Detected        │";
+      ui_print "└─────────────────────────────────┘";
       ;;
     *uv*|*UV*)
       GPU_PROFILE="uv"
-      ui_print "◉ UV GPU profile detected...";
+      ui_print "┌─────────────────────────────────┐";
+      ui_print "│         UV GPU Detected         │";
+      ui_print "└─────────────────────────────────┘";
       ;;
     *)
-      ui_print "◉ Using default stock GPU profile...";
+      ui_print "┌─────────────────────────────────┐";
+      ui_print "│       STOCK GPU Detected        │";
+      ui_print "└─────────────────────────────────┘";
       ;;
   esac
   ui_print " ";
