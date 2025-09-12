@@ -211,17 +211,20 @@ auto_install() {
       ui_print "┌─────────────────────────────────┐";
       ui_print "│       OC+UV GPU Detected        │";
       ui_print "└─────────────────────────────────┘";
+      ui_print "◉ Applying OC+UV GPU...";
       ;;
     *uv*|*UV*)
       GPU_PROFILE="uv"
       ui_print "┌─────────────────────────────────┐";
       ui_print "│         UV GPU Detected         │";
       ui_print "└─────────────────────────────────┘";
+      ui_print "◉ Applying UV GPU...";
       ;;
     *)
       ui_print "┌─────────────────────────────────┐";
       ui_print "│       STOCK GPU Detected        │";
       ui_print "└─────────────────────────────────┘";
+      ui_print "◉ Applying Stock GPU...";
       ;;
   esac
   ui_print " ";
