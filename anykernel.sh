@@ -72,21 +72,35 @@ manual_install() {
   done
   ui_print " ";
 
-  ui_print "> GPU Profile: OC+UV (Vol +) || Stock (Vol -) ";
+  ui_print "> GPU Profile: Modified (Vol +) || Stock (Vol -) ";
   while true; do
     ev=$(getevent -lt 2>/dev/null | grep -m1 "KEY_VOLUME.*DOWN")
     case $ev in
       *KEY_VOLUMEUP*)
         ui_print "┌─────────────────────────────────┐";
-        ui_print "│    OC+UV GPU Profile Enabled    │";
-        ui_print "│          (683-150MHz)           │";
+        ui_print "│     Modified GPU Selected       │";
         ui_print "└─────────────────────────────────┘";
-        GPU_PROFILE="ocuv"
+        ui_print "> GPU Profile: OC+UV (Vol +) || UV Only (Vol -) ";
+        while true; do
+          ev=$(getevent -lt 2>/dev/null | grep -m1 "KEY_VOLUME.*DOWN")
+          case $ev in
+            *KEY_VOLUMEUP*)
+              ui_print "◉ OC+UV GPU profile Selected (683-150MHz)...";
+              GPU_PROFILE="ocuv"
+              break;
+              ;;
+            *KEY_VOLUMEDOWN*)
+              ui_print "◉ UV GPU profile Selected (670-150MHz)...";
+              GPU_PROFILE="uv"
+              break;
+              ;;
+          esac
+        done
         break;
         ;;
       *KEY_VOLUMEDOWN*)
         ui_print "┌─────────────────────────────────┐";
-        ui_print "│       Stock GPU Enabled         │";
+        ui_print "│      Stock GPU Selected         │";
         ui_print "└─────────────────────────────────┘";
         GPU_PROFILE="stock"
         break;
@@ -103,7 +117,6 @@ manual_install() {
         ui_print "┌─────────────────────────────────┐";
         ui_print "│     Normal CPU Mode Selected    │";
         ui_print "└─────────────────────────────────┘";
-        ui_print " ";
         ui_print "> CPU Frequency: 3.2GHz (Vol +) || 2.8GHz (Vol -) ";
         while true; do
           ev=$(getevent -lt 2>/dev/null | grep -m1 "KEY_VOLUME.*DOWN")
@@ -111,22 +124,28 @@ manual_install() {
             *KEY_VOLUMEUP*)
               ui_print "◉ Maximum CPU selected - 3.2GHz";
               if [ "$GPU_PROFILE" = "ocuv" ]; then
-                mv *-normal-dtb $home/dtb;
-                rm -f *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+                mv dtbs/ocuv/munch-normal-dtb $home/dtb;
+                rm -rf dtbs/;
+              elif [ "$GPU_PROFILE" = "uv" ]; then
+                mv dtbs/uv/munch-normal-uv-dtb $home/dtb;
+                rm -rf dtbs/;
               else
-                mv *-normal-gpustk-dtb $home/dtb;
-                rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+                mv dtbs/stock/munch-normal-gpustk-dtb $home/dtb;
+                rm -rf dtbs/;
               fi
               break 
               ;;
             *KEY_VOLUMEDOWN*)
               ui_print "◉ Balance CPU selected - 2.8GHz";
               if [ "$GPU_PROFILE" = "ocuv" ]; then
-                mv *-slightuc-dtb $home/dtb;
-                rm -f *-normal-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+                mv dtbs/ocuv/munch-slightuc-dtb $home/dtb;
+                rm -rf dtbs/;
+              elif [ "$GPU_PROFILE" = "uv" ]; then
+                mv dtbs/uv/munch-slightuc-uv-dtb $home/dtb;
+                rm -rf dtbs/;
               else
-                mv *-slightuc-gpustk-dtb $home/dtb;
-                rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-effcpu-gpustk-dtb;
+                mv dtbs/stock/munch-slightuc-gpustk-dtb $home/dtb;
+                rm -rf dtbs/;
               fi
               break 
               ;;
@@ -140,11 +159,14 @@ manual_install() {
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying power-efficient CPU configuration (2.5GHz)...";
         if [ "$GPU_PROFILE" = "ocuv" ]; then
-          mv *-effcpu-dtb $home/dtb;
-          rm -f *-normal-dtb *-slightuc-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+          mv dtbs/ocuv/munch-effcpu-dtb $home/dtb;
+          rm -rf dtbs/;
+        elif [ "$GPU_PROFILE" = "uv" ]; then
+          mv dtbs/uv/munch-effcpu-uv-dtb $home/dtb;
+          rm -rf dtbs/;
         else
-          mv *-effcpu-gpustk-dtb $home/dtb;
-          rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb;
+          mv dtbs/stock/munch-effcpu-gpustk-dtb $home/dtb;
+          rm -rf dtbs/;
         fi
         break;
         ;;
@@ -184,12 +206,25 @@ auto_install() {
 
   GPU_PROFILE="stock"
   case "$ZIPFILE" in
-    *ocuv*|*OCUV*|*uv*|*UV*)
+    *ocuv*|*OCUV*)
       GPU_PROFILE="ocuv"
-      ui_print "◉ OC+UV GPU profile detected (683-150MHz)...";
+      ui_print "┌─────────────────────────────────┐";
+      ui_print "│       OC+UV GPU Detected        │";
+      ui_print "└─────────────────────────────────┘";
+      ui_print "◉ Applying OC+UV GPU...";
+      ;;
+    *uv*|*UV*)
+      GPU_PROFILE="uv"
+      ui_print "┌─────────────────────────────────┐";
+      ui_print "│         UV GPU Detected         │";
+      ui_print "└─────────────────────────────────┘";
+      ui_print "◉ Applying UV GPU...";
       ;;
     *)
-      ui_print "◉ Using default stock GPU profile...";
+      ui_print "┌─────────────────────────────────┐";
+      ui_print "│       STOCK GPU Detected        │";
+      ui_print "└─────────────────────────────────┘";
+      ui_print "◉ Applying Stock GPU...";
       ;;
   esac
   ui_print " ";
@@ -200,12 +235,15 @@ auto_install() {
       ui_print "│     Efficient CPU - 2.5GHz      │";
       ui_print "└─────────────────────────────────┘";
       ui_print "◉ Applying power-efficient CPU frequency...";
-      if [ "$GPU_PROFILE" = "stock" ]; then
-        mv *-effcpu-gpustk-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb;
+      if [ "$GPU_PROFILE" = "ocuv" ]; then
+        mv dtbs/ocuv/munch-effcpu-dtb $home/dtb;
+        rm -rf dtbs/;
+      elif [ "$GPU_PROFILE" = "uv" ]; then
+        mv dtbs/uv/munch-effcpu-uv-dtb $home/dtb;
+        rm -rf dtbs/;
       else
-        mv *-effcpu-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/stock/munch-effcpu-gpustk-dtb $home/dtb;
+        rm -rf dtbs/;
       fi
       ;;
     *bal*|*BAL*)
@@ -213,12 +251,15 @@ auto_install() {
       ui_print "│     Balance CPU - 2.8GHz        │";
       ui_print "└─────────────────────────────────┘";
       ui_print "◉ Applying balanced CPU frequency...";
-      if [ "$GPU_PROFILE" = "stock" ]; then
-        mv *-slightuc-gpustk-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-effcpu-gpustk-dtb;
+      if [ "$GPU_PROFILE" = "ocuv" ]; then
+        mv dtbs/ocuv/munch-slightuc-dtb $home/dtb;
+        rm -rf dtbs/;
+      elif [ "$GPU_PROFILE" = "uv" ]; then
+        mv dtbs/uv/munch-slightuc-uv-dtb $home/dtb;
+        rm -rf dtbs/;
       else
-        mv *-slightuc-dtb $home/dtb;
-        rm -f *-normal-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/stock/munch-slightuc-gpustk-dtb $home/dtb;
+        rm -rf dtbs/;
       fi
       ;;
     *)
@@ -226,12 +267,15 @@ auto_install() {
       ui_print "│        Max CPU - 3.2GHz         │";
       ui_print "└─────────────────────────────────┘";
       ui_print "◉ Applying maximum CPU frequency...";
-      if [ "$GPU_PROFILE" = "stock" ]; then
-        mv *-normal-gpustk-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+      if [ "$GPU_PROFILE" = "ocuv" ]; then
+        mv dtbs/ocuv/munch-normal-dtb $home/dtb;
+        rm -rf dtbs/;
+      elif [ "$GPU_PROFILE" = "uv" ]; then
+        mv dtbs/uv/munch-normal-uv-dtb $home/dtb;
+        rm -rf dtbs/;
       else
-        mv *-normal-dtb $home/dtb;
-        rm -f *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/stock/munch-normal-gpustk-dtb $home/dtb;
+        rm -rf dtbs/;
       fi
       ;;
   esac
@@ -296,12 +340,6 @@ process_fusionx_file() {
         ;;
     esac
     
-    # Convert 'uv' to 'ocuv' for backward compatibility
-    if [ "$GPU_VARIANT" = "uv" ]; then
-      GPU_VARIANT="ocuv"
-      ui_print "Note: 'uv' converted to 'ocuv' for compatibility";
-    fi
-    
     ui_print "ROM Variant: $UI_VARIANT"
     ui_print "CPU Variant: $CPU_VARIANT"
     ui_print "GPU Variant: $GPU_VARIANT"
@@ -331,52 +369,70 @@ process_fusionx_file() {
       if [ "$GPU_VARIANT" = "ocuv" ]; then
         ui_print "┌─────────────────────────────────┐";
         ui_print "│  Efficient CPU + OCUV - 2.5GHz  │";
-        ui_print "│        (683-150MHz GPU)         │";
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying efficient CPU + OC+UV GPU...";
-        mv *-effcpu-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/ocuv/munch-effcpu-dtb $home/dtb;
+        rm -rf dtbs/;
+      elif [ "$GPU_VARIANT" = "uv" ]; then
+        ui_print "┌─────────────────────────────────┐";
+        ui_print "│    Efficient CPU + UV - 2.5GHz  │";
+        ui_print "└─────────────────────────────────┘";
+        ui_print "◉ Applying efficient CPU + UV GPU...";
+        mv dtbs/uv/munch-effcpu-uv-dtb $home/dtb;
+        rm -rf dtbs/;
       else
         ui_print "┌─────────────────────────────────┐";
         ui_print "│   Efficient CPU Mode - 2.5GHz   │";
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying efficient CPU + stock GPU...";
-        mv *-effcpu-gpustk-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb;
+        mv dtbs/stock/munch-effcpu-gpustk-dtb $home/dtb;
+        rm -rf dtbs/;
       fi
     elif [ "$CPU_VARIANT" = "bal" ]; then
       if [ "$GPU_VARIANT" = "ocuv" ]; then
         ui_print "┌─────────────────────────────────┐";
         ui_print "│   Balance CPU + OCUV - 2.8GHz   │";
-        ui_print "│         (683-150MHz GPU)        │";
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying balanced CPU + OC+UV GPU...";
-        mv *-slightuc-dtb $home/dtb;
-        rm -f *-normal-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/ocuv/munch-slightuc-dtb $home/dtb;
+        rm -rf dtbs/;
+      elif [ "$GPU_VARIANT" = "uv" ]; then
+        ui_print "┌─────────────────────────────────┐";
+        ui_print "│     Balance CPU + UV - 2.8GHz   │";
+        ui_print "└─────────────────────────────────┘";
+        ui_print "◉ Applying balanced CPU + UV GPU...";
+        mv dtbs/uv/munch-slightuc-uv-dtb $home/dtb;
+        rm -rf dtbs/;
       else
         ui_print "┌─────────────────────────────────┐";
         ui_print "│    Balance CPU Mode - 2.8GHz    │";
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying balanced CPU + stock GPU...";
-        mv *-slightuc-gpustk-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/stock/munch-slightuc-gpustk-dtb $home/dtb;
+        rm -rf dtbs/;
       fi
     elif [ "$CPU_VARIANT" = "max" ]; then
       if [ "$GPU_VARIANT" = "ocuv" ]; then
         ui_print "┌─────────────────────────────────┐";
         ui_print "│      Max CPU + OCUV - 3.2GHz    │";
-        ui_print "│          (683-150MHz GPU)       │";
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying maximum CPU + OC+UV GPU...";
-        mv *-normal-dtb $home/dtb;
-        rm -f *-slightuc-dtb *-effcpu-dtb *-normal-gpustk-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/ocuv/munch-normal-dtb $home/dtb;
+        rm -rf dtbs/;
+      elif [ "$GPU_VARIANT" = "uv" ]; then
+        ui_print "┌─────────────────────────────────┐";
+        ui_print "│       Max CPU + UV - 3.2GHz     │";
+        ui_print "└─────────────────────────────────┘";
+        ui_print "◉ Applying maximum CPU + UV GPU...";
+        mv dtbs/uv/munch-normal-uv-dtb $home/dtb;
+        rm -rf dtbs/;
       else
         ui_print "┌─────────────────────────────────┐";
         ui_print "│        Max CPU - 3.2GHz         │";
         ui_print "└─────────────────────────────────┘";
         ui_print "◉ Applying maximum CPU + stock GPU...";
-        mv *-normal-gpustk-dtb $home/dtb;
-        rm -f *-normal-dtb *-slightuc-dtb *-effcpu-dtb *-slightuc-gpustk-dtb *-effcpu-gpustk-dtb;
+        mv dtbs/stock/munch-normal-gpustk-dtb $home/dtb;
+        rm -rf dtbs/;
       fi
     fi
 
