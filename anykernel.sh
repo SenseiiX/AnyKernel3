@@ -44,6 +44,54 @@ else
   SIDELOAD=0;
 fi;
 
+# Function to get volume key with timeout
+get_key_with_timeout() {
+  local timeout=$1
+  local keyfile="/tmp/ak3_keypress_$"
+  
+  # Clean up any existing keyfile
+  rm -f "$keyfile"
+  
+  # Start background process to capture key event
+  (
+    ev=$(timeout $timeout getevent -lc 1 2>/dev/null | grep -m1 "KEY_VOLUME")
+    case $ev in
+      *KEY_VOLUMEUP*DOWN*)
+        echo "UP" > "$keyfile"
+        ;;
+      *KEY_VOLUMEDOWN*DOWN*)
+        echo "DOWN" > "$keyfile"
+        ;;
+    esac
+  ) &
+  KEY_PID=$!
+  
+  # Wait for timeout with countdown
+  local count=0
+  while [ $count -lt $timeout ]; do
+    if [ -f "$keyfile" ]; then
+      KEY_RESULT=$(cat "$keyfile")
+      rm -f "$keyfile"
+      kill $KEY_PID 2>/dev/null
+      wait $KEY_PID 2>/dev/null
+      echo "$KEY_RESULT"
+      return 0
+    fi
+    sleep 1
+    count=$((count + 1))
+    if [ $count -lt $timeout ]; then
+      ui_print "◉ Auto-selecting in $((timeout - count)) seconds..."
+    fi
+  done
+  
+  # Timeout reached - cleanup
+  kill $KEY_PID 2>/dev/null
+  wait $KEY_PID 2>/dev/null
+  rm -f "$keyfile"
+  echo "TIMEOUT"
+  return 1
+}
+
 manual_install() {
   ui_print " ";
   ui_print "> UI Variant: MIUI/HyperOS (Vol +) || AOSP (Vol -) ";
@@ -444,23 +492,28 @@ process_fusionx_file() {
   fi
 }
 
+# Main installation mode selection with timeout
 ui_print "> Installation Mode: Manual (Vol +) || Auto (Vol -) ";
 
-while true; do
-  ev=$(getevent -lt 2>/dev/null | grep -m1 "KEY_VOLUME.*DOWN")
-  case $ev in
-    *KEY_VOLUMEUP*)
-      ui_print "◉ Manual installation selected";
-      INSTALL_METHOD="manual"
-      break
-      ;;
-    *KEY_VOLUMEDOWN*)
-      ui_print "◉ Automatic installation selected";
-      INSTALL_METHOD="auto"
-      break
-      ;;
-  esac
-done
+KEY_RESULT=$(get_key_with_timeout 5)
+
+case "$KEY_RESULT" in
+  "UP")
+    ui_print "◉ Manual installation selected";
+    INSTALL_METHOD="manual"
+    ;;
+  "DOWN")
+    ui_print "◉ Automatic installation selected";
+    INSTALL_METHOD="auto"
+    ;;
+  "TIMEOUT")
+    ui_print "┌─────────────────────────────────┐";
+    ui_print "│  No Input - Defaulting to Auto │";
+    ui_print "└─────────────────────────────────┘";
+    INSTALL_METHOD="auto"
+    ;;
+esac
+ui_print " ";
 
 if [ "$INSTALL_METHOD" = "manual" ]; then
   manual_install
