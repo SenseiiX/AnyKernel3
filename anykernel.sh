@@ -47,49 +47,46 @@ fi;
 # Function to get volume key with timeout
 get_key_with_timeout() {
   local timeout=$1
-  local keyfile="/tmp/ak3_keypress_$"
+  local start_time=$(date +%s)
+  local end_time=$((start_time + timeout))
+  local last_display=$start_time
   
-  # Clean up any existing keyfile
-  rm -f "$keyfile"
+  # Display initial countdown
+  ui_print "◉ Auto-selecting in $timeout seconds..."
   
-  # Start background process to capture key event
-  (
-    ev=$(timeout $timeout getevent -lc 1 2>/dev/null | grep -m1 "KEY_VOLUME")
+  while true; do
+    local current_time=$(date +%s)
+    local remaining=$((end_time - current_time))
+    
+    # Check if timeout reached
+    if [ $remaining -le 0 ]; then
+      echo "TIMEOUT"
+      return 1
+    fi
+    
+    # Update countdown display every second
+    if [ $current_time -gt $last_display ]; then
+      ui_print "◉ Auto-selecting in $remaining seconds..."
+      last_display=$current_time
+    fi
+    
+    # Check for key press (non-blocking with short timeout)
+    local ev=$(timeout 0.5 getevent -lc 1 2>/dev/null | grep "KEY_VOLUME.*DOWN")
+    
     case $ev in
       *KEY_VOLUMEUP*DOWN*)
-        echo "UP" > "$keyfile"
+        echo "UP"
+        return 0
         ;;
       *KEY_VOLUMEDOWN*DOWN*)
-        echo "DOWN" > "$keyfile"
+        echo "DOWN"
+        return 0
         ;;
     esac
-  ) &
-  KEY_PID=$!
-  
-  # Wait for timeout with countdown
-  local count=0
-  while [ $count -lt $timeout ]; do
-    if [ -f "$keyfile" ]; then
-      KEY_RESULT=$(cat "$keyfile")
-      rm -f "$keyfile"
-      kill $KEY_PID 2>/dev/null
-      wait $KEY_PID 2>/dev/null
-      echo "$KEY_RESULT"
-      return 0
-    fi
-    sleep 1
-    count=$((count + 1))
-    if [ $count -lt $timeout ]; then
-      ui_print "◉ Auto-selecting in $((timeout - count)) seconds..."
-    fi
+    
+    # Small sleep to prevent CPU spinning
+    sleep 0.1
   done
-  
-  # Timeout reached - cleanup
-  kill $KEY_PID 2>/dev/null
-  wait $KEY_PID 2>/dev/null
-  rm -f "$keyfile"
-  echo "TIMEOUT"
-  return 1
 }
 
 manual_install() {
